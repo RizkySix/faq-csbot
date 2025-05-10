@@ -13,13 +13,19 @@ export type PostProps = {
   published: boolean;
 };
 
-const Post: React.FC<{ post: PostProps }> = ({ post }) => {
-  const authorName = post.author ? post.author.name : "Unknown author";
+export type FAQProps = {
+  id: string,
+  question: string,
+  answer: string,
+}
+
+const Post: React.FC<{ faq: FAQProps }> = ({ faq }) => {
+  const answer = faq.answer ? faq.answer : "Unknown FAQ";
   return (
-    <div onClick={() => Router.push("/p/[id]", `/p/${post.id}`)}>
-      <h2>{post.title}</h2>
-      <small>By {authorName}</small>
-      <ReactMarkdown children={post.content} />
+    <div onClick={() => Router.push("/p/[id]", `/p/${faq.id}`)}>
+      <h2>{faq.question}</h2>
+      <small>Is {answer}</small>
+   
       <style jsx>{`
         div {
           color: inherit;

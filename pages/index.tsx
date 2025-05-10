@@ -1,18 +1,10 @@
 import React, { useState } from "react";
-import { GetStaticProps } from "next";
-import Layout from "../components/Layout";
-import prisma from "../lib/prisma";
 import toast from "react-hot-toast";
-import { FAQProps } from "../components/Post";
 
-
-type Props = {
-  feed: FAQProps[];
-};
-
-const Page: React.FC<Props> = ({ feed }) => {
+const Page: React.FC = () => {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,29 +14,35 @@ const Page: React.FC<Props> = ({ feed }) => {
       return;
     }
 
-    const res = await fetch("/api/faq", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, answer }),
-    });
+    setIsSubmitting(true);
 
-    console.log(res)
+    try {
+      const res = await fetch("/api/faq", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, answer }),
+      });
 
-    if (res.status === 409) {
-      toast.error("This question already exists.");
-    } else if (res.ok) {
-      toast.success("FAQ has been successfully saved!");
-      setQuestion("");
-      setAnswer("");
-    } else {
-      toast.error("Something went wrong while saving.");
+      if (res.status === 409) {
+        toast.error("This question already exists.");
+      } else if (res.ok) {
+        toast.success("FAQ has been successfully saved!");
+        setQuestion("");
+        setAnswer("");
+      } else {
+        toast.error("Something went wrong while saving.");
+      }
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="container">
-      <h1 className="title">Add New BST FAQ</h1>
-  
+      <h1 className="title">Add New FAQ</h1>
+
       <form onSubmit={handleSubmit} className="form-box">
         <div className="form-group">
           <label className="label">Question</label>
@@ -56,7 +54,7 @@ const Page: React.FC<Props> = ({ feed }) => {
             className="input"
           />
         </div>
-  
+
         <div className="form-group">
           <label className="label">Answer</label>
           <textarea
@@ -66,16 +64,21 @@ const Page: React.FC<Props> = ({ feed }) => {
             className="textarea"
           />
         </div>
-  
+
         <div className="form-actions">
-          <button type="submit" className="button">
-            Save FAQ
+          <button type="submit" className="button" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <span className="spinner" /> Saving...
+              </>
+            ) : (
+              "Save FAQ"
+            )}
           </button>
         </div>
       </form>
     </div>
   );
-  
 };
 
 export default Page;

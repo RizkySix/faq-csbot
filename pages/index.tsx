@@ -1,52 +1,81 @@
-import React from "react"
-import { GetStaticProps } from "next"
-import Layout from "../components/Layout"
-import Post, { FAQProps, PostProps } from "../components/Post"
-import prisma from '../lib/prisma';
+import React, { useState } from "react";
+import { GetStaticProps } from "next";
+import Layout from "../components/Layout";
+import prisma from "../lib/prisma";
+import toast from "react-hot-toast";
+import { FAQProps } from "../components/Post";
 
-export const getStaticProps: GetStaticProps = async () => {
-  const feed = await prisma.fAQ.findMany({
-    where: { downloaded: false },
-  });
-  return {
-    props: { feed },
-    revalidate: 10,
-  };
-}
 
 type Props = {
-  feed: FAQProps[]
-}
+  feed: FAQProps[];
+};
 
-const Blog: React.FC<Props> = (props) => {
+const Page: React.FC<Props> = ({ feed }) => {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!question.trim() || !answer.trim()) {
+      toast.error("Both question and answer are required.");
+      return;
+    }
+
+    const res = await fetch("/api/faq", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, answer }),
+    });
+
+    console.log(res)
+
+    if (res.status === 409) {
+      toast.error("This question already exists.");
+    } else if (res.ok) {
+      toast.success("FAQ has been successfully saved!");
+      setQuestion("");
+      setAnswer("");
+    } else {
+      toast.error("Something went wrong while saving.");
+    }
+  };
+
   return (
-    <Layout>
-      <div className="page">
-        <h1>Public Feed</h1>
-        <main>
-          {props.feed.map((faq) => (
-            <div key={faq.id} className="faq">
-              <Post faq={faq} />
-            </div>
-          ))}
-        </main>
-      </div>
-      <style jsx>{`
-        .post {
-          background: white;
-          transition: box-shadow 0.1s ease-in;
-        }
+    <div className="container">
+      <h1 className="title">Add New BST FAQ</h1>
+  
+      <form onSubmit={handleSubmit} className="form-box">
+        <div className="form-group">
+          <label className="label">Question</label>
+          <input
+            type="text"
+            placeholder="Enter your question here"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            className="input"
+          />
+        </div>
+  
+        <div className="form-group">
+          <label className="label">Answer</label>
+          <textarea
+            placeholder="Enter the answer here"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            className="textarea"
+          />
+        </div>
+  
+        <div className="form-actions">
+          <button type="submit" className="button">
+            Save FAQ
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+  
+};
 
-        .post:hover {
-          box-shadow: 1px 1px 3px #aaa;
-        }
-
-        .post + .post {
-          margin-top: 2rem;
-        }
-      `}</style>
-    </Layout>
-  )
-}
-
-export default Blog
+export default Page;
